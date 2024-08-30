@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_STRING")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  firstName String
+  lastName  String
+  createdAt DateTime   @default(now())
+  dob       DateTime
+  role      Role       @default(POLICY_HOLDER)
+  address   String
+  phone     String
+  claims    Claim[]
+  documents Document[]
+  reports   Report[]
+}
+
+model Policy {
+  id                String   @id @unique
+  createdAt         DateTime @default(now())
+  patientName       String
+  patientDob        DateTime
+  coverageStartDate DateTime
+  claims            Claim[]
+  emails            String[]
+}
+
+model Claim {
+  id               String     @id
+  createdAt        DateTime   @default(now())
+  title            String
+  desc             String?
+  claimType        String
+  hospName         String
+  hospCity         String
+  hospCode         String
+  dateOfAdmission  DateTime
+  dateOfIntimation DateTime
+  claimAmount      Int
+  policy           Policy     @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  policyId         String
+  documents        Document[]
+  report           Report?
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int
+}
+
+model Document {
+  id           Int      @id @default(autoincrement())
+  docType      DocType
+  name         String
+  createdAt    DateTime @default(now())
+  originalName String
+  claim        Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claimId      String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+}
+
+model Report {
+  id                  Int                  @id @default(autoincrement())
+  combinedSummary     String
+  notes               String?
+  approved            ApprovedType         @default(STALL)
+  createdAt           DateTime             @default(now())
+  claim               Claim                @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claimId             String               @unique
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              Int
+  docWiseReport       DocWiseReport?
+  alternateTreatments AlternateTreatments?
+}
+
+model DocWiseReport {
+  id       Int    @id @default(autoincrement())
+  text     Json
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId Int    @unique
+}
+
+model AlternateTreatments {
+  id       Int    @id @default(autoincrement())
+  text     Json
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId Int    @unique
+}
+
+model Otp {
+  id       Int      @id @default(autoincrement())
+  email    String
+  code     String
+  expireAt DateTime
+}
+
+model Hosp {
+  id   Int    @id @default(autoincrement())
+  code String
+  name String
+  city String
+}
+
+enum Role {
+  POLICY_HOLDER
+  CLAIM_ASSESSOR
+}
+
+enum DocType {
+  SCAN
+  TEXT
+}
+
+enum ApprovedType {
+  YES
+  NO
+  STALL
+}
